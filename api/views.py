@@ -17,3 +17,9 @@ class TaskListView(View):
     def get(self, request):
         tasks = Task.objects.all()
         return JsonResponse([to_dict(task) for task in tasks], safe=False, status=200)
+
+
+class TaskView(View):
+    def get(self, request, id: int):
+        task = Task.objects.get(id=id)
+        return JsonResponse(to_dict(task), safe=False, status=200)
