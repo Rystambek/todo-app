@@ -19,6 +19,7 @@ class TaskListView(View):
     def get(self, request:HttpRequest):
         tasks = Task.objects.all()
         return JsonResponse([to_dict(task) for task in tasks], safe=False, status=200)
+
     def post(self,request:HttpRequest):
         data_json = request.body.decode()
         data = json.loads(data_json)
@@ -101,3 +102,4 @@ class TaskUndoneView(View):
         task.save()
 
         return JsonResponse(to_dict(task),status=200)
+
