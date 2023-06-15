@@ -12,6 +12,7 @@ def to_dict(task: Task) -> dict:
         "done": task.done,
         "created": task.created,
         "updated": task.updated,
+        "user": task.user.username,
     }
 
 
