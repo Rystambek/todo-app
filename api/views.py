@@ -50,22 +50,37 @@ class TaskListView(View):
 
 
     def post(self,request:HttpRequest):
-        data_json = request.body.decode()
-        data = json.loads(data_json)
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
 
-        if not data.get('title'):
-            return JsonResponse({'status':"title yo'q"})
-        elif not data.get('description'):
-            return JsonResponse({'status':'description yo\'q'})
-        
-        task = Task.objects.create(
-            title = data['title'],
-            description = data['description']
-        )
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
 
-        task.save()
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'status': 'user not found!'}, status=404)
 
-        return JsonResponse(to_dict(task),status=201)
+            data_json = request.body.decode()
+            data = json.loads(data_json)
+
+            if not data.get('title'):
+                return JsonResponse({'status':"title yo'q"})
+            elif not data.get('description'):
+                return JsonResponse({'status':'description yo\'q'})
+            
+            task = Task.objects.create(
+                title = data['title'],
+                description = data['description'],
+                user = user
+            )
+            task.save()
+
+            return JsonResponse(to_dict(task),status=201)
+
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
 
 
 class TaskIdView(View):
@@ -88,7 +103,7 @@ class TaskIdView(View):
                 return JsonResponse({'status': 'object does not exist!'})
             
             return JsonResponse(to_dict(task),status=200)
-            
+
         else:
             return JsonResponse({'status': 'auth type not found!'}, status=404)
 
