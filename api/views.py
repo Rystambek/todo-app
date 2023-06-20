@@ -168,14 +168,31 @@ class TaskUndoneView(View):
 
 class UserListView(View):
     def get(self, request: HttpRequest, id: int = None) -> JsonResponse:
-        if id:
-            try:
-                user = User.objects.get(id=id)
-            except ObjectDoesNotExist:
-                return JsonResponse({'status': 'object does not exist!'})
-            return JsonResponse(to_dict_user(user), status=200)
-        users = User.objects.all()
-        return JsonResponse([to_dict_user(user) for user in users], safe=False, status=200)
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'status': 'user not found!'}, status=404)
+
+            if user.is_superuser:
+                if id:
+                    try:
+                        user = User.objects.get(id=id)
+                    except ObjectDoesNotExist:
+                        return JsonResponse({'status': 'object does not exist!'})
+                    return JsonResponse(to_dict_user(user), status=200)
+                users = User.objects.all()
+                return JsonResponse([to_dict_user(user) for user in users], safe=False, status=200)
+            else:
+                return JsonResponse({'status': 'user is not superuser!'}, status=404)
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
 
     
     def post(self, request: HttpRequest) -> JsonResponse:
