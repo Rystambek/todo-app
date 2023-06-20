@@ -46,6 +46,18 @@ class TaskListView(View):
             return JsonResponse([to_dict(task) for task in tasks], safe=False, status=200)
 
     def post(self,request:HttpRequest):
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'error': 'you are not registred.'})
+
         data_json = request.body.decode()
         data = json.loads(data_json)
 
@@ -56,7 +68,8 @@ class TaskListView(View):
         
         task = Task.objects.create(
             title = data['title'],
-            description = data['description']
+            description = data['description'],
+            user = user
         )
 
         task.save()
@@ -65,36 +78,75 @@ class TaskListView(View):
 
 class TaskIdView(View):
     def get(self,request:HttpRequest,id):
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'error': 'you are not registred.'})
+
         try:
-            task = Task.objects.get(id=id)
+            task = Task.objects.filter(user=user).get(id=id)
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'object does not exist!'})
         task = Task.objects.get(id=id)
         return JsonResponse(to_dict(task),status=200)
 
     def put(self,request:HttpRequest,id):
+        
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'error': 'you are not registred.'})
+        
         try:
-            task = Task.objects.get(id=id)
+            task = Task.objects.filter(user=user).get(id=id)
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'object does not exist!'})
         
         data_json = request.body.decode()
-        data = json.loads(data_json)
+        data: dict = json.loads(data_json)
 
         task.title = data.get('title', task.title)
-        # if data.get('title'):
-        #     task.title = data['title']
-        if data.get('description'):
-            task.description = data['description']
-       
+        if data.keys() == ["title","description"]:
+            task.title = data["title"]
+            task.description = data["description"]
+        elif "title" in data.keys():
+            task.title = data["title"]
+        elif "description" in data.keys():
+            task.description = data["description"]
 
-        task.save()
 
         return JsonResponse(to_dict(task),status=200)
     
     def delete(self,request:HttpRequest,id) -> JsonResponse:
+        
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'error': 'you are not registred.'})
+        
         try:
-            task = Task.objects.get(id=id)
+            task = Task.objects.filter(user=user).get(id=id)
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'object does not exist!'})
 
@@ -104,8 +156,20 @@ class TaskIdView(View):
         
 class TaskDoneView(View):
     def post(self,request:HttpRequest,id):
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'error': 'you are not registred.'})
+        
         try:
-            task = Task.objects.get(id=id)
+            task = Task.objects.filter(user=user).get(id=id)
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'object does not exist!'})
         
@@ -118,8 +182,20 @@ class TaskDoneView(View):
     
 class TaskUndoneView(View):
     def post(self,request:HttpRequest,id):
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'error': 'you are not registred.'})
+        
         try:
-            task = Task.objects.get(id=id)
+            task = Task.objects.filter(user=user).get(id=id)
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'object does not exist!'})
         
