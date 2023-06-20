@@ -132,14 +132,9 @@ class TaskIdView(View):
             data: dict = json.loads(data_json)
 
             task.title = data.get('title', task.title)
-            if data.keys() == ["title","description"]:
-                task.title = data["title"]
-                task.description = data["description"]
-            elif "title" in data.keys():
-                task.title = data["title"]
-            elif "description" in data.keys():
-                task.description = data["description"]
+            task.description = data.get('description', task.description)
 
+            task.save()
 
             return JsonResponse(to_dict(task),status=200)
         else:
