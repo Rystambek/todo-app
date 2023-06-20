@@ -40,15 +40,20 @@ class TaskListView(View):
             user = authenticate(username=username, password=password)
             
             if user is None:
-                return JsonResponse({'error': 'you are not registred.'})
+                return JsonResponse({'status': 'user not found!'}, status=404)
 
             tasks = Task.objects.filter(user=user)
             return JsonResponse([to_dict(task) for task in tasks], safe=False, status=200)
+        
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
+
 
     def post(self,request:HttpRequest):
         headers = request.headers
         authorization = headers.get('Authorization')
         auth_type, auth_token = authorization.split(' ')
+
 
         if auth_type.lower() == 'basic':
             username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
@@ -56,25 +61,28 @@ class TaskListView(View):
             user = authenticate(username=username, password=password)
             
             if user is None:
-                return JsonResponse({'error': 'you are not registred.'})
+                return JsonResponse({'status': 'user not found!'}, status=404)
 
-        data_json = request.body.decode()
-        data = json.loads(data_json)
+            data_json = request.body.decode()
+            data = json.loads(data_json)
 
-        if not data.get('title'):
-            return JsonResponse({'status':"title yo'q"})
-        elif not data.get('description'):
-            return JsonResponse({'status':'description yo\'q'})
-        
-        task = Task.objects.create(
-            title = data['title'],
-            description = data['description'],
-            user = user
-        )
+            if not data.get('title'):
+                return JsonResponse({'status':"title yo'q"})
+            elif not data.get('description'):
+                return JsonResponse({'status':'description yo\'q'})
+            
+            task = Task.objects.create(
+                title = data['title'],
+                description = data['description'],
+                user = user
+            )
+            task.save()
 
-        task.save()
+            return JsonResponse(to_dict(task),status=201)
 
-        return JsonResponse(to_dict(task),status=201)
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
+
 
 class TaskIdView(View):
     def get(self,request:HttpRequest,id):
@@ -88,14 +96,18 @@ class TaskIdView(View):
             user = authenticate(username=username, password=password)
             
             if user is None:
-                return JsonResponse({'error': 'you are not registred.'})
+                return JsonResponse({'status': 'user not found!'}, status=404)
 
-        try:
-            task = Task.objects.filter(user=user).get(id=id)
-        except ObjectDoesNotExist:
-            return JsonResponse({'status': 'object does not exist!'})
-        task = Task.objects.get(id=id)
-        return JsonResponse(to_dict(task),status=200)
+            try:
+                task = Task.objects.filter(user=user).get(id=id)
+            except ObjectDoesNotExist:
+                return JsonResponse({'status': 'object does not exist!'})
+            
+            return JsonResponse(to_dict(task),status=200)
+
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
+
 
     def put(self,request:HttpRequest,id):
         
@@ -209,14 +221,31 @@ class TaskUndoneView(View):
 
 class UserListView(View):
     def get(self, request: HttpRequest, id: int = None) -> JsonResponse:
-        if id:
-            try:
-                user = User.objects.get(id=id)
-            except ObjectDoesNotExist:
-                return JsonResponse({'status': 'object does not exist!'})
-            return JsonResponse(to_dict_user(user), status=200)
-        users = User.objects.all()
-        return JsonResponse([to_dict_user(user) for user in users], safe=False, status=200)
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'status': 'user not found!'}, status=404)
+
+            if user.is_superuser:
+                if id:
+                    try:
+                        user = User.objects.get(id=id)
+                    except ObjectDoesNotExist:
+                        return JsonResponse({'status': 'object does not exist!'})
+                    return JsonResponse(to_dict_user(user), status=200)
+                users = User.objects.all()
+                return JsonResponse([to_dict_user(user) for user in users], safe=False, status=200)
+            else:
+                return JsonResponse({'status': 'user is not superuser!'}, status=404)
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
 
     
     def post(self, request: HttpRequest) -> JsonResponse:
