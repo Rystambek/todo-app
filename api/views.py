@@ -123,25 +123,27 @@ class TaskIdView(View):
             if user is None:
                 return JsonResponse({'error': 'you are not registred.'})
         
-        try:
-            task = Task.objects.filter(user=user).get(id=id)
-        except ObjectDoesNotExist:
-            return JsonResponse({'status': 'object does not exist!'})
-        
-        data_json = request.body.decode()
-        data: dict = json.loads(data_json)
+            try:
+                task = Task.objects.filter(user=user).get(id=id)
+            except ObjectDoesNotExist:
+                return JsonResponse({'status': 'object does not exist!'})
+            
+            data_json = request.body.decode()
+            data: dict = json.loads(data_json)
 
-        task.title = data.get('title', task.title)
-        if data.keys() == ["title","description"]:
-            task.title = data["title"]
-            task.description = data["description"]
-        elif "title" in data.keys():
-            task.title = data["title"]
-        elif "description" in data.keys():
-            task.description = data["description"]
+            task.title = data.get('title', task.title)
+            if data.keys() == ["title","description"]:
+                task.title = data["title"]
+                task.description = data["description"]
+            elif "title" in data.keys():
+                task.title = data["title"]
+            elif "description" in data.keys():
+                task.description = data["description"]
 
 
-        return JsonResponse(to_dict(task),status=200)
+            return JsonResponse(to_dict(task),status=200)
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
     
     def delete(self,request:HttpRequest,id) -> JsonResponse:
         
@@ -157,14 +159,16 @@ class TaskIdView(View):
             if user is None:
                 return JsonResponse({'error': 'you are not registred.'})
         
-        try:
-            task = Task.objects.filter(user=user).get(id=id)
-        except ObjectDoesNotExist:
-            return JsonResponse({'status': 'object does not exist!'})
+            try:
+                task = Task.objects.filter(user=user).get(id=id)
+            except ObjectDoesNotExist:
+                return JsonResponse({'status': 'object does not exist!'})
 
-        task.delete()
+            task.delete()
 
-        return JsonResponse({'status': 'ok'},status=204)
+            return JsonResponse({'status': 'ok'},status=204)
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
         
 class TaskDoneView(View):
     def post(self,request:HttpRequest,id):
@@ -180,17 +184,19 @@ class TaskDoneView(View):
             if user is None:
                 return JsonResponse({'error': 'you are not registred.'})
         
-        try:
-            task = Task.objects.filter(user=user).get(id=id)
-        except ObjectDoesNotExist:
-            return JsonResponse({'status': 'object does not exist!'})
+            try:
+                task = Task.objects.filter(user=user).get(id=id)
+            except ObjectDoesNotExist:
+                return JsonResponse({'status': 'object does not exist!'})
+            
+            task.done = True
         
-        task.done = True
-       
 
-        task.save()
+            task.save()
 
-        return JsonResponse(to_dict(task),status=200)
+            return JsonResponse(to_dict(task),status=200)
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
     
 class TaskUndoneView(View):
     def post(self,request:HttpRequest,id):
@@ -206,17 +212,19 @@ class TaskUndoneView(View):
             if user is None:
                 return JsonResponse({'error': 'you are not registred.'})
         
-        try:
-            task = Task.objects.filter(user=user).get(id=id)
-        except ObjectDoesNotExist:
-            return JsonResponse({'status': 'object does not exist!'})
+            try:
+                task = Task.objects.filter(user=user).get(id=id)
+            except ObjectDoesNotExist:
+                return JsonResponse({'status': 'object does not exist!'})
+            
+            task.done = False
         
-        task.done = False
-       
 
-        task.save()
+            task.save()
 
-        return JsonResponse(to_dict(task),status=200)
+            return JsonResponse(to_dict(task),status=200)
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
 
 
 class UserListView(View):
