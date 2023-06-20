@@ -4,6 +4,8 @@ from django.http import JsonResponse,HttpRequest
 from .models import Task
 from django.contrib.auth.models import User
 import json
+import base64
+from django.contrib.auth import authenticate
 
 from django.contrib.auth.hashers import make_password
 
@@ -28,8 +30,20 @@ def to_dict_user(user: User) -> dict:
 
 class TaskListView(View):
     def get(self, request:HttpRequest):
-        tasks = Task.objects.all()
-        return JsonResponse([to_dict(task) for task in tasks], safe=False, status=200)
+        headers = request.headers
+        authorization = headers.get('Authorization')
+        auth_type, auth_token = authorization.split(' ')
+
+        if auth_type.lower() == 'basic':
+            username, password = base64.b64decode(auth_token).decode('utf-8').split(':')
+
+            user = authenticate(username=username, password=password)
+            
+            if user is None:
+                return JsonResponse({'error': 'you are not registred.'})
+
+            tasks = Task.objects.filter(user=user)
+            return JsonResponse([to_dict(task) for task in tasks], safe=False, status=200)
 
     def post(self,request:HttpRequest):
         data_json = request.body.decode()
