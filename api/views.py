@@ -40,10 +40,14 @@ class TaskListView(View):
             user = authenticate(username=username, password=password)
             
             if user is None:
-                return JsonResponse({'error': 'you are not registred.'})
+                return JsonResponse({'status': 'user not found!'}, status=404)
 
             tasks = Task.objects.filter(user=user)
             return JsonResponse([to_dict(task) for task in tasks], safe=False, status=200)
+        
+        else:
+            return JsonResponse({'status': 'auth type not found!'}, status=404)
+
 
     def post(self,request:HttpRequest):
         data_json = request.body.decode()
